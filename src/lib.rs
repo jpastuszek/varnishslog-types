@@ -1,13 +1,14 @@
 #[macro_use]
 extern crate serde_derive;
-use linked_hash_map::LinkedHashMap;
+use linear_map::LinearMap;
 
 //TODO: not-owning types: 0-copy, smallvec
 //TODO: use smallvec instead of LinkedHashMap? benchmark
 
 // Note: deserialization fails when using &str value :/
-pub type HeaderIndex<'i> = LinkedHashMap<&'i str, Vec<String>>;
-pub type LogVarsIndex<'i> = LinkedHashMap<&'i str, String>;
+pub type IndexedHeader<'i> = LinearMap<&'i str, Vec<String>>;
+pub type RawHeader<'i> = Vec<(&'i str, &'i str)>;
+pub type LogVarsIndex<'i> = LinearMap<&'i str, String>;
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
@@ -16,6 +17,24 @@ pub enum HttpAccessRecord<'i> {
     ClientRecord(ClientRecord<'i>),
     #[serde(borrow)]
     PipeSession(PipeSession<'i>),
+}
+
+impl<'i> HttpAccessRecord<'i> {
+    pub fn as_client_record(&self) -> Option<&ClientRecord<'i>> {
+        if let HttpAccessRecord::ClientRecord(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_pipe_session(&self) -> Option<&PipeSession<'i>> {
+        if let HttpAccessRecord::PipeSession(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,9 +70,9 @@ pub struct ClientRecord<'i> {
     pub restart_log: Option<Log<'i>>,
     pub log: Log<'i>,
     #[serde(borrow)]
-    pub request_header_index: Option<HeaderIndex<'i>>,
+    pub request_header_index: Option<IndexedHeader<'i>>,
     #[serde(borrow)]
-    pub response_header_index: Option<HeaderIndex<'i>>,
+    pub response_header_index: Option<IndexedHeader<'i>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -87,15 +106,23 @@ pub struct Address<'i> {
 #[serde(untagged)]
 pub enum Headers<'i> {
     #[serde(borrow)]
-    Raw(Vec<(&'i str, &'i str)>),
+    Raw(RawHeader<'i>),
     // #[serde(borrow)]
-    Indexed(HeaderIndex<'i>),
+    Indexed(IndexedHeader<'i>),
 }
 
 impl<'i> Headers<'i> {
-    pub fn as_indexed(&self) -> Option<&HeaderIndex<'i>> {
-        if let Headers::Indexed(index) = self {
-            Some(index)
+    pub fn as_raw(&self) -> Option<&RawHeader<'i>> {
+        if let Headers::Raw(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_indexed(&self) -> Option<&IndexedHeader<'i>> {
+        if let Headers::Indexed(v) = self {
+            Some(v)
         } else {
             None
         }
@@ -149,11 +176,11 @@ pub struct BackendAccess<'i> {
     pub compression: Option<Compression<'i>>,
     pub log: Log<'i>,
     #[serde(borrow)]
-    pub request_header_index: Option<HeaderIndex<'i>>,
+    pub request_header_index: Option<IndexedHeader<'i>>,
     #[serde(borrow)]
-    pub response_header_index: Option<HeaderIndex<'i>>,
+    pub response_header_index: Option<IndexedHeader<'i>>,
     #[serde(borrow)]
-    pub cache_object_response_header_index: Option<HeaderIndex<'i>>,
+    pub cache_object_response_header_index: Option<IndexedHeader<'i>>,
     pub lru_nuked: u32,
 }
 
@@ -176,9 +203,9 @@ pub struct PipeSession<'i> {
     pub sent_total_bytes: u64,
     pub log: Log<'i>,
     #[serde(borrow)]
-    pub request_header_index: Option<HeaderIndex<'i>>,
+    pub request_header_index: Option<IndexedHeader<'i>>,
     #[serde(borrow)]
-    pub backend_request_header_index: Option<HeaderIndex<'i>>,
+    pub backend_request_header_index: Option<IndexedHeader<'i>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -239,9 +266,17 @@ pub struct IndexedLog<'i> {
 }
 
 impl<'i> Log<'i> {
+    pub fn as_raw(&self) -> Option<&Vec<RawLog<'i>>> {
+        if let Log::Raw(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
     pub fn as_indexed(&self) -> Option<&IndexedLog<'i>> {
-        if let Log::Indexed(indexed) = self {
-            Some(indexed)
+        if let Log::Indexed(v) = self {
+            Some(v)
         } else {
             None
         }
