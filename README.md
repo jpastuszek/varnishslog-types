@@ -1,0 +1,1 @@
+Types to deserialize output of [varnishslog](https://github.com/jpastuszek/varnishslog).
