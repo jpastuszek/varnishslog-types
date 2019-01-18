@@ -1,0 +1,13 @@
+[package]
+name = "varnishslog-types"
+version = "0.1.0"
+authors = ["Jakub Pastuszek <jpastuszek@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+linked-hash-map = { version = "0.5.1", features = ["serde_impl"] }
+serde = "1.0.84"
+serde_derive = "1.0.84"
+
+[dev-dependencies]
+serde_json = "1.0.36"
