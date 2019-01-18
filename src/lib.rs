@@ -2,9 +2,6 @@
 extern crate serde_derive;
 use linear_map::LinearMap;
 
-//TODO: not-owning types: 0-copy, smallvec
-//TODO: use smallvec instead of LinkedHashMap? benchmark
-
 // Note: deserialization fails when using &str value :/
 pub type IndexedHeader<'i> = LinearMap<&'i str, Vec<String>>;
 pub type RawHeader<'i> = Vec<(&'i str, &'i str)>;
