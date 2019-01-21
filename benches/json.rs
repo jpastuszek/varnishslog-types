@@ -8,6 +8,12 @@ use std::io::BufRead;
 
 use varnishslog_types::HttpAccessRecord;
 
+fn data(n: usize) -> Vec<String> {
+    let test_data = File::open("real.json").unwrap();
+    let lines = BufReader::new(test_data).lines().map(|l| l.unwrap());
+    lines.take(n).collect()
+}
+
 fn json_deserialize(lines: &[String], fun: impl Fn(HttpAccessRecord) -> usize) -> usize {
     lines.iter().enumerate().map(|(no, line)| {
         match serde_json::from_str::<HttpAccessRecord>(&line) {
@@ -15,12 +21,6 @@ fn json_deserialize(lines: &[String], fun: impl Fn(HttpAccessRecord) -> usize) -
             Ok(v) => fun(v)
         }
     }).sum()
-}
-
-fn data(n: usize) -> Vec<String> {
-    let test_data = File::open("log.100k.json").unwrap();
-    let lines = BufReader::new(test_data).lines().map(|l| l.unwrap());
-    lines.take(n).collect()
 }
 
 fn criterion_benchmark(c: &mut Criterion) {

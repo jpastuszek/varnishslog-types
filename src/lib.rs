@@ -275,8 +275,8 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let test_data = File::open("log.100k.json").unwrap();
-        for (no, line) in BufReader::new(test_data).lines().take(2_000).enumerate() {
+        let test_data = File::open("test.json").unwrap();
+        for (no, line) in BufReader::new(test_data).lines().enumerate() {
             let line = line.unwrap();
             match serde_json::from_str::<HttpAccessRecord>(&line) {
                 Err(err) => panic!("{} [{}]: {}", err, no, line),
