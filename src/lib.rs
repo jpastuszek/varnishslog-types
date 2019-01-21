@@ -2,11 +2,13 @@
 extern crate serde_derive;
 use linear_map::LinearMap;
 
-// Note: deserialization fails when using &str value :/
-pub type IndexedHeader<'i> = LinearMap<&'i str, Vec<String>>;
-pub type RawHeader<'i> = Vec<(&'i str, &'i str)>;
+/// Warning: Escaped JSON strings cannot be deserialized to &str type fields - values that would need escaping are not supported in this fields.
+
+pub type IndexedHeader = LinearMap<String, Vec<String>>;
+pub type RawHeader = Vec<(String, String)>;
 pub type LogVarsIndex<'i> = LinearMap<&'i str, String>;
 
+/// This is entry type that JSON varnishslog output format can be deserialized to
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum HttpAccessRecord<'i> {
@@ -44,10 +46,8 @@ pub struct ClientRecord<'i> {
     pub start_timestamp: f64,
     pub end_timestamp: Option<f64>,
     pub handling: &'i str,
-    #[serde(borrow)]
-    pub request: Option<HttpRequest<'i>>,
-    #[serde(borrow)]
-    pub response: Option<HttpResponse<'i>>,
+    pub request: Option<HttpRequest>,
+    pub response: Option<HttpResponse>,
     #[serde(borrow)]
     pub backend_access: Option<BackendAccess<'i>>,
     pub process_duration: Option<f64>,
@@ -66,10 +66,8 @@ pub struct ClientRecord<'i> {
     pub restart_count: u64,
     pub restart_log: Option<Log<'i>>,
     pub log: Log<'i>,
-    #[serde(borrow)]
-    pub request_header_index: Option<IndexedHeader<'i>>,
-    #[serde(borrow)]
-    pub response_header_index: Option<IndexedHeader<'i>>,
+    pub request_header_index: Option<IndexedHeader>,
+    pub response_header_index: Option<IndexedHeader>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -101,15 +99,13 @@ pub struct Address<'i> {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
-pub enum Headers<'i> {
-    #[serde(borrow)]
-    Raw(RawHeader<'i>),
-    // #[serde(borrow)]
-    Indexed(IndexedHeader<'i>),
+pub enum Headers {
+    Raw(RawHeader),
+    Indexed(IndexedHeader),
 }
 
-impl<'i> Headers<'i> {
-    pub fn as_raw(&self) -> Option<&RawHeader<'i>> {
+impl Headers {
+    pub fn as_raw(&self) -> Option<&RawHeader> {
         if let Headers::Raw(v) = self {
             Some(v)
         } else {
@@ -117,7 +113,7 @@ impl<'i> Headers<'i> {
         }
     }
 
-    pub fn as_indexed(&self) -> Option<&IndexedHeader<'i>> {
+    pub fn as_indexed(&self) -> Option<&IndexedHeader> {
         if let Headers::Indexed(v) = self {
             Some(v)
         } else {
@@ -127,21 +123,19 @@ impl<'i> Headers<'i> {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct HttpRequest<'i> {
-    pub protocol: &'i str,
-    pub method: &'i str,
-    pub url: &'i str,
-    #[serde(borrow)]
-    pub headers: Headers<'i>,
+pub struct HttpRequest {
+    pub protocol: String,
+    pub method: String,
+    pub url: String,
+    pub headers: Headers,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct HttpResponse<'i> {
+pub struct HttpResponse {
     pub status: u32,
-    pub reason: &'i str,
-    pub protocol: &'i str,
-    #[serde(borrow)]
-    pub headers: Headers<'i>,
+    pub reason: String,
+    pub protocol: String,
+    pub headers: Headers,
 }
 
 #[derive(Debug, Deserialize)]
@@ -150,10 +144,8 @@ pub struct BackendAccess<'i> {
     pub start_timestamp: Option<f64>,
     pub end_timestamp: Option<f64>,
     pub handling: &'i str,
-    #[serde(borrow)]
-    pub request: HttpRequest<'i>,
-    #[serde(borrow)]
-    pub response: Option<HttpResponse<'i>>,
+    pub request: HttpRequest,
+    pub response: Option<HttpResponse>,
     pub send_duration: f64,
     pub wait_duration: Option<f64>,
     pub ttfb_duration: Option<f64>,
@@ -172,12 +164,9 @@ pub struct BackendAccess<'i> {
     #[serde(borrow)]
     pub compression: Option<Compression<'i>>,
     pub log: Log<'i>,
-    #[serde(borrow)]
-    pub request_header_index: Option<IndexedHeader<'i>>,
-    #[serde(borrow)]
-    pub response_header_index: Option<IndexedHeader<'i>>,
-    #[serde(borrow)]
-    pub cache_object_response_header_index: Option<IndexedHeader<'i>>,
+    pub request_header_index: Option<IndexedHeader>,
+    pub response_header_index: Option<IndexedHeader>,
+    pub cache_object_response_header_index: Option<IndexedHeader>,
     pub lru_nuked: u32,
 }
 
@@ -191,18 +180,15 @@ pub struct PipeSession<'i> {
     pub end_timestamp: Option<f64>,
     #[serde(borrow)]
     pub backend_connection: Option<BackendConnection<'i>>,
-    pub request: HttpRequest<'i>,
-    #[serde(borrow)]
-    pub backend_request: HttpRequest<'i>,
+    pub request: HttpRequest,
+    pub backend_request: HttpRequest,
     pub process_duration: Option<f64>,
     pub ttfb_duration: Option<f64>,
     pub recv_total_bytes: u64,
     pub sent_total_bytes: u64,
     pub log: Log<'i>,
-    #[serde(borrow)]
-    pub request_header_index: Option<IndexedHeader<'i>>,
-    #[serde(borrow)]
-    pub backend_request_header_index: Option<IndexedHeader<'i>>,
+    pub request_header_index: Option<IndexedHeader>,
+    pub backend_request_header_index: Option<IndexedHeader>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -226,8 +212,7 @@ pub struct CacheObject<'i> {
     pub origin_timestamp: f64,
     pub fetch_mode: Option<&'i str>,
     pub fetch_streamed: Option<bool>,
-    #[serde(borrow)]
-    pub response: Option<HttpResponse<'i>>,
+    pub response: Option<HttpResponse>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -240,8 +225,8 @@ pub struct Compression<'i> {
 #[derive(Debug, Deserialize)]
 pub struct RawLog<'i> {
     pub entry_type: &'i str,
-    pub message: &'i str,
-    pub detail: Option<&'i str>,
+    pub message: String,
+    pub detail: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -257,7 +242,7 @@ pub enum Log<'i> {
 pub struct IndexedLog<'i> {
     #[serde(borrow)]
     pub vars: LogVarsIndex<'i>,
-    pub messages: Vec<&'i str>,
+    pub messages: Vec<String>,
     pub acl_matched: Vec<&'i str>,
     pub acl_not_matched: Vec<&'i str>,
 }
