@@ -10,17 +10,27 @@ pub type LogVarsIndex<'i> = LinearMap<&'i str, String>;
 
 /// This is entry type that JSON varnishslog output format can be deserialized to
 #[derive(Deserialize, Debug)]
-#[serde(untagged)]
+#[serde(tag = "record_type")]
 pub enum HttpAccessRecord<'i> {
-    #[serde(borrow)]
-    ClientRecord(ClientRecord<'i>),
-    #[serde(borrow)]
+    #[serde(rename = "client_request", borrow)]
+    ClientRequest(ClientRequest<'i>),
+    #[serde(rename = "esi_subrequest", borrow)]
+    EsiSubrequest(ClientRequest<'i>),
+    #[serde(rename = "pipe_session", borrow)]
     PipeSession(PipeSession<'i>),
 }
 
 impl<'i> HttpAccessRecord<'i> {
-    pub fn as_client_record(&self) -> Option<&ClientRecord<'i>> {
-        if let HttpAccessRecord::ClientRecord(v) = self {
+    pub fn as_client_request(&self) -> Option<&ClientRequest<'i>> {
+        if let HttpAccessRecord::ClientRequest(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_esi_subrequest(&self) -> Option<&ClientRequest<'i>> {
+        if let HttpAccessRecord::EsiSubrequest(v) = self {
             Some(v)
         } else {
             None
@@ -37,8 +47,7 @@ impl<'i> HttpAccessRecord<'i> {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ClientRecord<'i> {
-    pub record_type: &'i str,
+pub struct ClientRequest<'i> {
     pub vxid: u64,
     #[serde(borrow)]
     pub session: Option<SessionInfo<'i>>,
@@ -172,7 +181,6 @@ pub struct BackendAccess<'i> {
 
 #[derive(Debug, Deserialize)]
 pub struct PipeSession<'i> {
-    pub record_type: &'i str,
     pub vxid: u32,
     #[serde(borrow)]
     pub remote_address: Address<'i>,
