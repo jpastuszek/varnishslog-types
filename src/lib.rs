@@ -48,7 +48,7 @@ impl<'i> HttpAccessRecord<'i> {
 
 #[derive(Debug, Deserialize)]
 pub struct ClientRequest<'i> {
-    pub vxid: u64,
+    pub vxid: u32,
     #[serde(borrow)]
     pub session: Option<SessionInfo<'i>>,
     pub remote_address: Address<'i>,
@@ -149,7 +149,7 @@ pub struct HttpResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct BackendAccess<'i> {
-    pub vxid: i64,
+    pub vxid: u32,
     pub start_timestamp: Option<f64>,
     pub end_timestamp: Option<f64>,
     pub handling: &'i str,
