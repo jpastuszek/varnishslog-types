@@ -273,14 +273,26 @@ impl<'i> Log<'i> {
     }
 }
 
-//TODO: yeah...
 /// Skip NCSA fields.
 /// Useful when working with NcsaJson format from varnishslog.
 pub fn skip_ncsa(entry: &str) -> Option<&str> {
-    let entry = entry.splitn(4, " ").last()?;
-    let entry = entry.splitn(2, "] \"").last()?;
-    let entry = entry.splitn(2, "\" ").last()?;
+    //TODO: yeah...
+
+    // first 4 fields
+    let entry = entry.splitn(4, " ").skip(3).next()?;
+    // timestamp
+    let entry = entry.splitn(2, "] ").skip(1).next()?;
+
+    // request line or nothing
+    let entry = if entry.starts_with("- ") {
+        &entry[2..entry.len()]
+    } else {
+        entry.splitn(2, "\" ").skip(1).next()?
+    };
+
+    // last 3 fileds
     let entry = entry.splitn(3, " ").last()?;
+
     Some(entry)
 }
 
