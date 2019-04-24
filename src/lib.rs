@@ -273,6 +273,17 @@ impl<'i> Log<'i> {
     }
 }
 
+//TODO: yeah...
+/// Skip NCSA fields.
+/// Useful when working with NcsaJson format from varnishslog.
+pub fn skip_ncsa(entry: &str) -> Option<&str> {
+    let entry = entry.splitn(4, " ").last()?;
+    let entry = entry.splitn(2, "] \"").last()?;
+    let entry = entry.splitn(2, "\" ").last()?;
+    let entry = entry.splitn(3, " ").last()?;
+    Some(entry)
+}
+
 #[cfg(test)]
 mod tests {
     pub use super::*;
@@ -287,6 +298,19 @@ mod tests {
         for (no, line) in BufReader::new(test_data).lines().enumerate() {
             let line = line.unwrap();
             match serde_json::from_str::<HttpAccessRecord>(&line) {
+                Err(err) => panic!("{} [{}]: {}", err, no, line),
+                _ => ()
+            };
+        }
+    }
+
+    #[test]
+    fn test_skip_ncsa() {
+        let test_data = File::open("test.ncsa_json").unwrap();
+        for (no, line) in BufReader::new(test_data).lines().enumerate() {
+            let line = line.unwrap();
+            let record = skip_ncsa(&line).expect("failed to skip NCSA");
+            match serde_json::from_str::<HttpAccessRecord>(record) {
                 Err(err) => panic!("{} [{}]: {}", err, no, line),
                 _ => ()
             };
