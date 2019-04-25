@@ -287,7 +287,17 @@ pub fn skip_ncsa(entry: &str) -> Option<&str> {
     let entry = if entry.starts_with("- ") {
         &entry[2..entry.len()]
     } else {
-        entry.splitn(2, "\" ").skip(1).next()?
+        let mut entry = entry;
+        loop {
+            let mut iter = entry.splitn(2, "\" ");
+            let skipped = iter.next()?;
+            entry = iter.next()?;
+            // check if we found escaped "
+            if !skipped.ends_with("\\") {
+                break
+            }
+        }
+        entry
     };
 
     // last 3 fileds
