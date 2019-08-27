@@ -3,10 +3,9 @@ name = "varnishslog-types"
 version = "0.5.1-alpha.0"
 authors = ["Jakub Pastuszek <jpastuszek@protonmail.com>"]
 edition = "2018"
-
 description = "Serde types for varnishslog output"
-
 repository = "https://github.com/jpastuszek/varnishslog-types"
+documentation = "https://docs.rs/varnishslog-types"
 readme = "README.md"
 keywords = ["varnish", "log"]
 categories = ["parser-implementations"]
