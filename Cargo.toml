@@ -1,6 +1,6 @@
 [package]
 name = "varnishslog-types"
-version = "0.5.2-alpha.0"
+version = "0.5.2"
 authors = ["Jakub Pastuszek <jpastuszek@protonmail.com>"]
 edition = "2018"
 description = "Serde types for varnishslog output"
